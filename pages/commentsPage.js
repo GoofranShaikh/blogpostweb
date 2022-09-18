@@ -1,8 +1,9 @@
 const express=require('express');
 const router =express.Router();
 const commentSchema=require('../model/comments')
+const auth = require("../middleware/auth");
 
-router.post('/create',async(req,res)=>{
+router.post('/create',auth,async(req,res)=>{
     try{
     const comments = new commentSchema({
         userid:req.body.userid,

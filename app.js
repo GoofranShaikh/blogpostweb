@@ -9,8 +9,12 @@ const User = require("./model/user");
 const blogs =require("./pages/blogPage");
 //import Comments page
 const comments= require("./pages/commentsPage")
+//import email service
+const mail = require("./pages/sendMail");
+const verifyToken = require("./middleware/auth");
+const verifyRefreshToken =require("./middleware/verifyRefresh")
 const app = express()
-const auth = require("./middleware/auth");
+// const {verifyToken,verifyRefreshToken} = require("./middleware/auth");
 
 app.use(express.json());
 
@@ -19,6 +23,8 @@ app.use(express.json());
 
 app.use('/blog-page',blogs)
 app.use('/comments',comments)
+app.use('/sendMail',mail)
+
 
 // Register
 app.post("/register", async (req, res) => {
@@ -87,19 +93,28 @@ app.post("/login", async (req, res) => {
   
       if (user && (await bcrypt.compare(password, user.password))) {
         // Create token
-        const token = jwt.sign(
+        const accesstoken = jwt.sign(
           { user_id: user._id, email },
           process.env.TOKEN_KEY,
           {
-            expiresIn: "2h",
+            expiresIn: "1m",
           }
         );
+        const refreshtoken = jwt.sign(
+          { user_id: user._id, email },
+          process.env.REFRESH_TOKEN,
+          {
+            expiresIn: "2h",
+          }
+        )
   
         // save user token
-        user.token = token;
-  
+       const accessToken= accesstoken;
+        const refreshToken =refreshtoken
+        console.log(refreshToken)
+
         // user
-        res.status(200).json(user);
+        res.status(200).json({user,accessToken,refreshToken});
       }
       res.status(400).send("Invalid Credentials");
     } catch (err) {
@@ -107,11 +122,38 @@ app.post("/login", async (req, res) => {
     }
     // Our register logic ends here
   });
-// our login logic goes here
+
+// refresh token end point
+app.post("/refresh",async(req,res)=>{
+  try{
+  const {email,refreshToken}=req.body
+  if(!refreshToken){
+    return res.status(400).send("refresh Token is required")
+  }
+  const isVerified=verifyRefreshToken(email,refreshToken)
+  if(isVerified){
+   const accToken= jwt.sign({email},
+      process.env.TOKEN_KEY,
+      {expiresIn:"2m"}
+      )
+      res.status(200).send({token:accToken})
+  }
+  else{
+    res.status(401).send('Unauthorized')
+  }
+  }
+  catch(err)
+  {
+    console.log(err)
+  }
+})
 
 
 
-app.post("/welcome", auth, (req, res) => {
+
+
+
+app.post("/welcome",verifyToken ,(req, res) => {
   res.status(200).send("Welcome 🙌 ");
 });
 // module.exports = router ;
