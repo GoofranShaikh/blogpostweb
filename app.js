@@ -14,8 +14,9 @@ const mail = require("./pages/sendMail");
 const verifyToken = require("./middleware/auth");
 const verifyRefreshToken =require("./middleware/verifyRefresh")
 const app = express()
+const cors = require('cors');
 // const {verifyToken,verifyRefreshToken} = require("./middleware/auth");
-
+app.use(cors());
 app.use(express.json());
 
 // Logic goes here
@@ -97,14 +98,14 @@ app.post("/login", async (req, res) => {
           { user_id: user._id, email },
           process.env.TOKEN_KEY,
           {
-            expiresIn: "1m",
+            expiresIn: "2m",
           }
         );
         const refreshtoken = jwt.sign(
           { user_id: user._id, email },
           process.env.REFRESH_TOKEN,
           {
-            expiresIn: "2h",
+            expiresIn: "4m",
           }
         )
   
@@ -139,6 +140,7 @@ app.post("/refresh",async(req,res)=>{
       res.status(200).send({token:accToken})
   }
   else{
+    console.log('refresh token not valid')
     res.status(401).send('Unauthorized')
   }
   }
@@ -153,8 +155,8 @@ app.post("/refresh",async(req,res)=>{
 
 
 
-app.post("/welcome",verifyToken ,(req, res) => {
-  res.status(200).send("Welcome 🙌 ");
+app.post("/welcome" ,verifyToken,(req, res) => {
+  res.status(200).send(JSON.stringify("Welcome 🙌 "));
 });
 // module.exports = router ;
 module.exports = app;
