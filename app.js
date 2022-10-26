@@ -1,9 +1,9 @@
 require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs'); //to encrypt the password of the user while saving to db
 const jwt = require('jsonwebtoken')
-// importing user context
+// importing user model
 const User = require("./model/user");
 //importing Blog Page
 const blogs =require("./pages/blogPage");
@@ -33,10 +33,10 @@ app.post("/register", async (req, res) => {
     // Our register logic starts here
     try {
       // Get user input
-      const { first_name, last_name, email, password } = req.body;
+      const { firstName, lastName, email, password } = req.body;
   
       // Validate user input
-      if (!(email && password && first_name && last_name)) {
+      if (!(email && password && firstName && lastName)) {
         res.status(400).send("All input is required");
       }
   
@@ -53,22 +53,22 @@ app.post("/register", async (req, res) => {
   
       // Create user in our database
       const user = await User.create({
-        first_name,
-        last_name,
-        email: email.toLowerCase(), // sanitize: convert email to lowercase
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
         password: encryptedPassword,
       });
   
-      // Create token
-      const token = jwt.sign(
-        { user_id: user._id, email },
-        process.env.TOKEN_KEY,
-        {
-          expiresIn: "2h",
-        }
-      );
-      // save user token
-      user.token = token;
+      // // Create token
+      // const token = jwt.sign(
+      //   { user_id: user._id, email },
+      //   process.env.TOKEN_KEY,
+      //   {
+      //     expiresIn: "2h",
+      //   }
+      // );
+      // // save user token
+      // user.token = token;
       // return new user
       res.status(201).json(user);
     } catch (err) {
@@ -98,22 +98,20 @@ app.post("/login", async (req, res) => {
           { user_id: user._id, email },
           process.env.TOKEN_KEY,
           {
-            expiresIn: "2m",
+            expiresIn: "5m",
           }
         );
         const refreshtoken = jwt.sign(
           { user_id: user._id, email },
           process.env.REFRESH_TOKEN,
           {
-            expiresIn: "4m",
+            expiresIn: "2h",
           }
         )
   
         // save user token
        const accessToken= accesstoken;
-        const refreshToken =refreshtoken
-        console.log(refreshToken)
-
+       const refreshToken =refreshtoken
         // user
         res.status(200).json({user,accessToken,refreshToken});
       }
@@ -135,7 +133,7 @@ app.post("/refresh",async(req,res)=>{
   if(isVerified){
    const accToken= jwt.sign({email},
       process.env.TOKEN_KEY,
-      {expiresIn:"2m"}
+      {expiresIn:"5m"}
       )
       res.status(200).send({token:accToken})
   }
@@ -147,6 +145,7 @@ app.post("/refresh",async(req,res)=>{
   catch(err)
   {
     console.log(err)
+    res.status(400).send('Bad Request')
   }
 })
 
@@ -156,7 +155,7 @@ app.post("/refresh",async(req,res)=>{
 
 
 app.post("/welcome" ,verifyToken,(req, res) => {
-  res.status(200).send(JSON.stringify("Welcome 🙌 "));
+  res.status(200).send(JSON.stringify("Hey, have you found this blog useful..."));
 });
 // module.exports = router ;
 module.exports = app;

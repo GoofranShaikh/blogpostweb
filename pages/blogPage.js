@@ -5,7 +5,7 @@ const userSchema= require('../model/user')
 const auth = require("../middleware/auth");
 const mongoose  =require("mongoose")
 
-//logic fr creating blog goes here
+//logic for creating blog goes here
 router.post('/blog',auth,async(req,res)=>{
     try{
     const blog = new blogSchema({
@@ -79,5 +79,20 @@ router.post('/renderComments',auth,async(req,res)=>{
   res.status(400).send(error)
   }
   })
+
+  router.post('/getblog',auth,async(req,res)=>{
+    try{
+      if(req.body.blogid){
+      const blogDetails= await blogSchema.findOne({_id:mongoose.Types.ObjectId(req.body.blogid)})
+            res.status(200).json(blogDetails)
+          }else{
+            res.status(400).send("blogid field is missing")
+          }
+    }
+    catch(error){
+    console.log(error)
+    res.status(400).send(error)
+    }
+    })
 
 module.exports =  router
